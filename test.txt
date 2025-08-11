@@ -1,0 +1,94 @@
+package com.example;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.PrintWriter;
+
+@WebServlet("/hello")
+public class HelloServlet extends HttpServlet {
+
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+        process(req, resp);
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+        // Accept form-encoded POSTs (curl -d "names=Alice&..." ...)
+        process(req, resp);
+    }
+
+    private void process(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        resp.setContentType("text/plain;charset=UTF-8");
+        try (PrintWriter out = resp.getWriter()) {
+            String names = req.getParameter("names"); // comma separated
+            String aStr = req.getParameter("a");
+            String bStr = req.getParameter("b");
+            String op = req.getParameter("op"); // add, sub, mul, div
+
+            // If no parameters, show usage instructions (plain text)
+            if ((names == null || names.trim().isEmpty())
+                    && (aStr == null || bStr == null || op == null)) {
+                out.println("HelloServlet Usage (plain text):");
+                out.println();
+                out.println("1) Greet names:");
+                out.println("   /hello?names=Alice,Bob");
+                out.println();
+                out.println("2) Math operation:");
+                out.println("   /hello?a=10&b=5&op=add");
+                out.println("   supported op values: add, sub, mul, div");
+                out.println();
+                out.println("3) Both together:");
+                out.println("   /hello?names=Alice& a=2.5&b=4&op=mul");
+                out.println();
+                out.println("You can also POST form data: names=...&a=...&b=...&op=...");
+                return;
+            }
+
+            // Greet names if provided
+            if (names != null && !names.trim().isEmpty()) {
+                String[] list = names.split("\\s*,\\s*");
+                for (String n : list) {
+                    out.println("Hello, " + n);
+                }
+            }
+
+            // Perform math if a,b,op present
+            if (aStr != null && bStr != null && op != null) {
+                try {
+                    double a = Double.parseDouble(aStr);
+                    double b = Double.parseDouble(bStr);
+                    double result;
+                    String symbol;
+                    switch (op) {
+                        case "add": result = a + b; symbol = "+"; break;
+                        case "sub": result = a - b; symbol = "-"; break;
+                        case "mul": result = a * b; symbol = "*"; break;
+                        case "div":
+                            if (b == 0) {
+                                out.println("Error: cannot divide by zero.");
+                                return;
+                            }
+                            result = a / b; symbol = "/"; break;
+                        default:
+                            out.println("Unknown operation: " + op);
+                            return;
+                    }
+                    out.println("Result: " + a + " " + symbol + " " + b + " = " + result);
+                } catch (NumberFormatException nfe) {
+                    out.println("Error: 'a' and 'b' must be valid numbers.");
+                }
+            }
+        }
+    }
+}
+
+
+
+-----
